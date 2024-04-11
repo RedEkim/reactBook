@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta>
+        <title>My first React component</title>
+    </head>
+    <body>
+        <div id="app">
+            <!-- my app renders here -->
+        </div>
+        <script src="react/react.js"></script>
+        <script src="react/react-dom.js"></script>
+        <script>
+            const myComponent = function() {
+                return React.createElement('span', null, 'I am so custom');
+            };
+            ReactDOM.render(
+                myComponent(),
+                document.getElementById('app')
+            );
+        </script>
+    </body>
+</html>
