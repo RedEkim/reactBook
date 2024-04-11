@@ -11,10 +11,10 @@
         <script src="react/react-dom.js"></script>
         <script src="react/babel.js"></script>
         <script type="text/babel">
-            class MyComponent extends React.Component {
-                render() {
-                    return <span>My name is <em>{this.props.name}</em></span>
-                }
+            const MyComponent = function(props) {
+                return (
+                    <span>My name is <em>{props.name}</em></span>
+                )
             }
 
             ReactDOM.render(
