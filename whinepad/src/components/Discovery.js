@@ -26,6 +26,9 @@ import FormInput from './FormInput';
 import Form from './Form';
 import Actions from './Actions';
 import Dialog from './Dialog';
+import Excel from './Excel';
+
+import schema from '../config/schema';
 
 function DialogExample() {
     const [example, setExample] = useState(null);
@@ -176,6 +179,21 @@ function Discovery() {
 
             <h2>Dialog</h2>
             <DialogExample />
+
+            <h2>Excel</h2>
+            <Excel
+                schema={schema}
+                initialData={schema.name.samples.map((_, idx) => {
+                    const element = {};
+                    for (let key in schema) {
+                        element[key] = schema[key].samples[idx];
+                    }
+                    return element;
+                })}
+                onDataChange={(data) => {
+                    console.log(data);
+                }}
+            />
         </div>
     );
 }
