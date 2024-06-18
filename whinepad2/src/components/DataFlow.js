@@ -1,97 +1,91 @@
-import {useState, useReducer, useRef} from 'react';
-import PropTypes from 'prop-types';
+import {useState} from 'react';
 
 import Header from './Header';
 import Body from './Body';
-import Dialog from './Dialog';
 import Excel from './Excel';
-import Form from './Form';
+import schema from '../config/schema';
+import DataContext from '../contexts/DataContext';
+import RouteContext from '../contexts/RouteContext';
 import clone from '../modules/clone';
+
+let initialData = JSON.parse(localStorage.getItem('data'));
+
+// default example data, read from the schema
+if (!initialData) {
+  initialData = [{}];
+  Object.keys(schema).forEach(
+    (key) => (initialData[0][key] = schema[key].samples[0]),
+  );
+}
+
+// read state from the URL "route"
+const route = {};
+function resetRoute() {
+  route.add = false;
+  route.edit = null;
+  route.info = null;
+  route.filter = null;
+}
+resetRoute();
+const path = window.location.pathname.replace(/\//, '');
+if (path) {
+  const [action, id] = path.split('/');
+  if (action === 'add') {
+    route.add = true;
+  } else if (action === 'edit' && id !== undefined) {
+    route.edit = parseInt(id, 10);
+  } else if (action === 'info' && id !== undefined) {
+    route.info = parseInt(id, 10);
+  } else if (action === 'filter' && id !== undefined) {
+    route.filter = id;
+  }
+}
 
 function commitToStorage(data) {
   localStorage.setItem('data', JSON.stringify(data));
 }
 
-function reducer(data, action) {
-  if (action.type === 'save') {
-    data = clone(data);
-    data.unshift(action.payload.formData);
-    commitToStorage(data);
-    return data;
+function DataFlow() {
+  const [data, setData] = useState(initialData);
+  const [filter, setFilter] = useState(route.filter);
+
+  function updateData(newData) {
+    newData = clone(newData);
+    commitToStorage(newData);
+    setData(newData);
   }
-  if (action.type === 'excelchange') {
-    commitToStorage(action.payload.updatedData);
-    return action.payload.updatedData;
-  }
-}
 
-function DataFlow({schema, initialData}) {
-  const [data, dispatch] = useReducer(reducer, initialData);
-  const [addNew, setAddNew] = useState(false);
-  const [filter, setFilter] = useState(null);
-
-  const form = useRef(null);
-
-  function saveNew(action) {
-    setAddNew(false);
-    if (action === 'dismiss') {
-      return;
+  function updateRoute(action = '', id = '') {
+    resetRoute();
+    if (action) {
+      route[action] = action === 'add' ? true : id;
     }
-
-    const formData = {};
-    Array.from(form.current).forEach(
-      (input) => (formData[input.id] = input.value),
-    );
-
-    dispatch({
-      type: 'save',
-      payload: {formData},
-    });
-  }
-
-  function onExcelDataChange(updatedData) {
-    dispatch({
-      type: 'excelchange',
-      payload: {updatedData},
-    });
+    id = id !== '' ? '/' + id : '';
+    window.history.replaceState(null, null, `/${action}${id}`);
   }
 
   function onSearch(e) {
-    setFilter(e.target.value);
+    const s = e.target.value;
+    setFilter(s);
+    if (s) {
+      updateRoute('filter', s);
+    } else {
+      updateRoute();
+    }
   }
 
   return (
     <div className="DataFlow">
-      <Header
-        onAdd={() => setAddNew(true)}
-        onSearch={onSearch}
-        count={data.length}
-      />
-      <Body>
-        <Excel
-          schema={schema}
-          initialData={data}
-          key={data}
-          onDataChange={(updatedData) => onExcelDataChange(updatedData)}
-          filter={filter}
-        />
-        {addNew ? (
-          <Dialog
-            modal={true}
-            header="Add new item"
-            confirmLabel="Add"
-            onAction={(action) => saveNew(action)}>
-            <Form ref={form} fields={schema} />
-          </Dialog>
-        ) : null}
-      </Body>
+      <DataContext.Provider value={{data, updateData}}>
+        <RouteContext.Provider value={{route, updateRoute}}>
+          <Header onSearch={onSearch} />
+          <Body>
+            <Excel filter={filter} />
+          </Body>
+        </RouteContext.Provider>
+      </DataContext.Provider>
     </div>
   );
 }
-
-DataFlow.propTypes = {
-  schema: PropTypes.object.isRequired,
-  initialData: PropTypes.arrayOf(PropTypes.object).isRequired,
-};
 
 export default DataFlow;
