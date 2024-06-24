@@ -1,6 +1,6 @@
 import Logo from './Logo';
 import './Header.css';
-import { useContext, useState, useRef } from 'react';
+import {useContext, useState, useRef} from 'react';
 
 import Button from './Button';
 import FormInput from './FormInput';
@@ -9,17 +9,15 @@ import Form from './Form';
 import schema from '../config/schema';
 
 import DataContext from '../contexts/DataContext';
+import RouteContext from '../contexts/RouteContext';
 
 function Header({onSearch}) {
   const {data, updateData} = useContext(DataContext);
-  const [addNew, setAddNew] = useState(false);
-  
+  const {route, updateRoute} = useContext(RouteContext);
+  const [addNew, setAddNew] = useState(route.add);
+
   const form = useRef(null);
 
-  const count = data.length;
-
-  const placeholder = count > 1 ? `Search ${count} items` : 'Search';
-  
   function saveNew(action) {
     setAddNew(false);
     updateRoute();
@@ -40,12 +38,14 @@ function Header({onSearch}) {
     updateRoute('add');
   }
 
+  const count = data.length;
+  const placeholder = count > 1 ? `Search ${count} items` : 'Search';
   return (
     <>
       <div className="Header">
         <Logo />
         <div>
-          <FormInput 
+          <FormInput
             placeholder={placeholder}
             id="search"
             onChange={onSearch}
@@ -63,8 +63,7 @@ function Header({onSearch}) {
           modal={true}
           header="Add new item"
           confirmLabel="Add"
-          onAction={(action) => saveNew(action)}
-        >
+          onAction={(action) => saveNew(action)}>
           <Form ref={form} fields={schema} />
         </Dialog>
       ) : null}
